@@ -1,5 +1,5 @@
 It's a TCP based simple Server to Client File Transfer application. I didn't use any thread, so it is one diectional (Server to Client).
-During testing period, I can smoothly transfer different types of file upto 5.25 MB, such as .pdf, .docx, .pptx, .jpg, .png, .txt, .flv, .mp3 etc etc.
+During testing period, I can smoothly transfer different types of file upto 5.25 MB, such as .pdf, .docx, .pptx, .jpg, .png, .txt, .flv, .mp3 etc.
 
 First run server.java and give your source directory. Then run client.java and give the path of download directory. 
 Please be careful when giving your path name, follow the format given as example (when you run thw program)
