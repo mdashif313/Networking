@@ -1,4 +1,4 @@
-A can transfer upto 284 MB different types of file(exe. pdf, pptx, txt, flv, wmv, jpg, png, mp4, mp3, xls, docx etc) with this solution.
+A can transfer upto 597 MB different types of file(exe. pdf, pptx, txt, flv, wmv, jpg, png, mp4, mp3, xls, docx, zip, 7z etc) with this solution.
 
 First run server side and then client side. Be careful about the path given in both server and client.
 Please customize the source directory according your pc before running FileServer.java.
