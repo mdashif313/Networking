@@ -1,0 +1,201 @@
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+/**
+ *
+ * @author Ashif
+ */
+public class server {
+
+  public final static int SOCKET_PORT = 13267;  // you may change this
+  public static String FileSourceDirectory ;  // you may change this
+  public final static int FILE_SIZE = 6022386;
+  public static String path="d:/server/server.txt";
+  
+  public static void main (String [] args ) throws IOException {
+
+      Scanner inFromUser=new Scanner(System.in);
+      System.out.println("Give your Source folder path (example format: d:/server/)");
+      FileSourceDirectory=inFromUser.nextLine();
+
+      int port = 24567;
+
+      ServerSocket serverSocket = new ServerSocket(port);
+      System.out.println("Initiated server, waiting for udp client on port: " + serverSocket.getLocalPort() + " ...");
+
+
+      FileInputStream fis = null;
+      BufferedInputStream bis = null;
+      OutputStream os = null;
+
+
+
+    int bytesRead;
+    int current = 0;
+    FileOutputStream fos = null;
+    BufferedOutputStream bos = null;
+
+
+          /*Check Zone
+     */
+      ServerSocket servsock = null;
+      Socket sock = null;
+
+      try {
+          servsock = new ServerSocket(SOCKET_PORT);
+          while (true) {
+
+              try {
+                  sock = servsock.accept();
+                  System.out.println("Accepted connection : " + sock);
+                  // send file
+                  DataInputStream in = new DataInputStream(sock.getInputStream());
+                  String str=in.readUTF();
+
+      String FileToRecive=FileSourceDirectory+str;
+
+      // receive file
+      byte [] mybytearray  = new byte [FILE_SIZE];
+      InputStream is = sock.getInputStream();
+      fos = new FileOutputStream(FileToRecive);
+      bos = new BufferedOutputStream(fos);
+      bytesRead = is.read(mybytearray,0,mybytearray.length);
+      current = bytesRead;
+
+      do {
+         bytesRead =
+            is.read(mybytearray, current, (mybytearray.length-current));
+         if(bytesRead >= 0) current += bytesRead;
+      } while(bytesRead > -1);
+
+      bos.write(mybytearray, 0 , current);
+      bos.flush();
+      System.out.println("File " + FileToRecive
+          + " downloaded (" + current + " bytes read)");
+      }
+    finally {
+      if (fos != null) fos.close();
+      if (bos != null) bos.close();
+      if (sock != null) sock.close();
+    }
+          break;
+      }
+    }
+    catch(Exception e) {
+      if (servsock != null) servsock.close();
+    }
+
+    if (servsock != null) servsock.close();
+
+		Socket socket = serverSocket.accept();
+		System.out.println("Connected to: " + socket.getRemoteSocketAddress());
+
+                String name="server";
+                System.out.print("Give msg to UDPClient:");
+                Scanner input=new Scanner(System.in);
+                DataOutputStream outputStream=new DataOutputStream(socket.getOutputStream());
+                DataInputStream inputStream= new DataInputStream(socket.getInputStream());
+
+                try {
+				String message = input.nextLine();
+				outputStream.writeUTF("[" + name + "] " + message);
+			} catch (Exception ex) {
+				System.out.println("Inside sender of " + name + ": " + ex);
+			}
+
+
+                        InetAddress address = InetAddress.getLocalHost();
+                        String hostIP = address.getHostAddress() ;
+                while (true) {
+			try {
+				String message = inputStream.readUTF();
+				System.out.println(message);
+
+                                if(message.equalsIgnoreCase("nak"))
+                                    break;
+                                if(message.equalsIgnoreCase("ack"))
+                                    new Sender(hostIP, 24567).send(path);
+                                
+			} catch (Exception ex) {
+				System.out.println("Inside receiver of " + name + ": " + ex);
+			}
+		}
+
+
+                
+  }
+}
+
+
+
+class Sender {
+
+	int port;		// Client's port
+	String host;	// Client's host
+
+	Sender(String _host, int _port) throws Exception {
+		System.out.println("Initializing sender.");
+		host = _host;
+		port = _port;
+	}
+
+	void send(String _path) throws Exception {
+		// Convert host string to InetAddress.
+		InetAddress address = InetAddress.getByName(host);
+
+		// Create an input stream to read from the file.
+		FileInputStream inStream = new FileInputStream(_path);
+		// Create a socket to send UDP packets.
+		DatagramSocket socket = new DatagramSocket();
+
+		// Send file name
+		System.out.println("Sending file name.");
+		// Extract the file name from the whole path.
+		String fileName = getFileName(_path);
+		// Convert the file name to byte array.
+		byte[] data = fileName.getBytes();
+		// Create UDP packet and send the file name.
+		DatagramPacket packet = new DatagramPacket(data, fileName.length(), address, port);
+		socket.send(packet);
+		Thread.sleep(5);
+
+		// Send file
+		System.out.println("Sending file.");
+		int pktCount = 0;
+		int readCount = 0;
+		data = new byte[1024];
+		/* Divide the file in small chunks of 1KB sized packets
+		 * and send those packets serially.
+		 */
+		while ((readCount = inStream.read(data)) != -1) {
+			System.out.println("Sending packet " + (++pktCount));
+			packet = new DatagramPacket(data, readCount, address, port);
+			socket.send(packet);
+			Thread.sleep(5);
+		}
+
+		/* Send a signature so that the receiver knows that the
+		 * whole file has been sent. Here "!DONE!" is used as
+		 * the signature.
+		 */
+		data = "!DONE!".getBytes();
+		packet = new DatagramPacket(data, data.length, address, port);
+		socket.send(packet);
+
+		inStream.close();
+		socket.close();
+
+		System.out.println("File sent.");
+	}
+
+	/* Extract file name from the given path.
+	 */
+	String getFileName(String _path) {
+		if(_path.charAt(0) == '/') {	// Linux
+			return _path.substring(_path.lastIndexOf('/')+1);
+		} else {						// Windows
+			return _path.substring(_path.lastIndexOf('\\')+1);
+		}
+	}
+}
